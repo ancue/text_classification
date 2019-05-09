@@ -1,4 +1,4 @@
-import sys
+import numpy as np
 import jieba
 import sklearn
 import sklearn.linear_model as linear_model
@@ -52,18 +52,28 @@ def evaluate(model, X, y):
 
 if __name__ == '__main__':
     X_train, X_test, y_train, y_test = fetch_train_test("data/train.txt")
-    word2id = build_dict(X_train, min_freq=10)
+    word2id = build_dict(X_train, min_freq=3)
 
     X_train = text2vec(X_train, word2id)
     X_test = text2vec(X_test, word2id)
 
-    lr = linear_model.LogisticRegression(C=1)
-    lr.fit(X_train, y_train)
+    params = {
+        "penalty": ["l1", "l2"],
+        "C": np.arange(1.0, 2.0, 0.1),
+    }
 
-    accuracy, auc = evaluate(lr, X_train, y_train)
-    sys.stdout.write("训练集正确率：%.4f%%\n" % (accuracy * 100))
-    sys.stdout.write("训练集AUC值：%.6f\n" % (auc))
+    estimator = linear_model.LogisticRegression()
 
-    accuracy, auc = evaluate(lr, X_test, y_test)
-    sys.stdout.write("验证集正确率：%.4f%%\n" % (accuracy * 100))
-    sys.stdout.write("验证AUC值：%.6f\n" % (auc))
+    gsearch = GridSearchCV(estimator, param_grid=params, scoring="roc_auc", cv=3)
+    gsearch.fit(X_train, y_train)
+    best_model = gsearch.best_estimator_
+
+    print("最好参数", gsearch.best_params_)
+    accuracy, auc = evaluate(best_model, X_train, y_train)
+
+    print("训练集正确率：%.4f%%\n" % (accuracy * 100))
+    print("训练集AUC值：%.6f\n" % (auc))
+
+    accuracy, auc = evaluate(best_model, X_test, y_test)
+    print("验证集正确率：%.4f%%\n" % (accuracy * 100))
+    print("验证AUC值：%.6f\n" % (auc))
