@@ -30,9 +30,12 @@ mapper_tag = {
 """
 
 def clean_txt(raw):
+    # 数字字母和中文
     fil = re.compile(r"[^0-9a-zA-Z\u4e00-\u9fa5]+")
     return fil.sub(" ",raw)
 
+# 将不是数字字母或中文的字符替换成空格
+# 排除停用词
 def seg(sentence, sw, apply=None):
     if isinstance(apply, FunctionType) or isinstance(apply, MethodType):
         sentence = apply(sentence)
@@ -44,7 +47,7 @@ def stop_words():
 
 
 # 对某个sentence进行处理：
-# content = '上海天然橡胶期价周三再创年内新高，主力合约突破21000元/吨重要关口。'
+content = '上海天然橡胶期价周三再创年内新高，主力合约突破21000元/吨重要关口。'
 # res = seg(content.lower().replace('\n', ''), stop_words(), apply=clean_txt)
 # print(res)
 
@@ -95,8 +98,10 @@ class TransformData(object):
         dd = defaultdict(list)
         for line in handler:
             label, content = line.split(',', 1)
+            # 每个类别下面有哪些文本
             dd[label.strip('__label__').strip()].append(content.strip())
 
+        # 写入csv文件
         df = pd.DataFrame()
         for key in dd.dict:
             col = pd.Series(dd[key], name=key)
@@ -118,6 +123,7 @@ def split_train_test(source, auth_data=False):
     train_data_set = []
     test_data_set = []
     for head in list(handel.head()):
+        # 训练集大小
         train_num = int(handel[head].dropna().__len__() * train_proportion)
         sub_list = [f'__label__{head} , {item.strip()}\n' for item in handel[head].dropna().tolist()]
         train_data_set.extend(sub_list[:train_num])
@@ -125,6 +131,7 @@ def split_train_test(source, auth_data=False):
     shuffle(train_data_set)
     shuffle(test_data_set)
 
+    # 将训练集和验证集分别写入不同文件
     with open(train_file, 'w', encoding='utf-8') as trainf,\
         open(test_file, 'w', encoding='utf-8') as testf:
         for tds in train_data_set:
