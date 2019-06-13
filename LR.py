@@ -8,7 +8,6 @@ import operator
 import array
 from sklearn.model_selection import GridSearchCV, KFold
 
-
 def fetch_train_test(data_path, test_size=0.2):
     y = list()
     text_list = list()
