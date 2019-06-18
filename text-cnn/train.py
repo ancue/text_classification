@@ -22,9 +22,9 @@ def main(argv=None):
             for line in ftrain:
                 fields = line.strip().split()
                 label = [0, 0]
-                label[int(fields[0])] = 1
-                label_list.append(label)
-                sequence_list.append(fields[1:])
+                label[int(fields[0])] = 1 # label [1,0] 或 [0,1]
+                label_list.append(label) # 标签
+                sequence_list.append(fields[1:]) # 句子
 
         padded_sequences = tf.contrib.keras.preprocessing.sequence.pad_sequences(
             sequence_list,
@@ -38,11 +38,11 @@ def main(argv=None):
 
     # step 2. Build model
     model_config = {
-        "vocab_size": max(itertools.chain(*data_dict["train"][1])) + 1,
+        "vocab_size": max(itertools.chain(*data_dict["train"][1])) + 1,# 词的最大编号加1，即为字典的大小
         "max_sequence_length": data_dict["train"][1].shape[1],
         "emb_dim": 100,
-        "channels": 128,
-        "filter_sizes": [3, 4, 5],
+        "channels": 128,# 每种尺寸卷积核的个数
+        "filter_sizes": [3, 4, 5], # text_cnn 使用不同的卷积核大小
         "keep_prob": 0.8,
         "batch_size": 64,
         "learning_rate": 3e-4,
@@ -64,3 +64,15 @@ def main(argv=None):
 
 if __name__ == '__main__':
     tf.app.run()
+
+"""
+原始代码
+验证集  97.39%
+测试集  95.63%
+
+学习率衰减
+验证集  96.62%
+测试集  94.32%
+
+
+"""

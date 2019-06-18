@@ -15,12 +15,14 @@ Author: Lynn @ 解惑者学院
 import copy
 import tensorflow as tf
 
+
 class TextCNN(object):
     """
     Reference:
         Kim, Y. (2014). Convolutional neural networks for sentence classification.
                         CoRR, abs/1408.5882. (https://arxiv.org/pdf/1408.5882.pdf)
     """
+
     def __init__(self, model_config):
         self._m_config = copy.deepcopy(model_config)
         self._build_graph()
@@ -32,7 +34,9 @@ class TextCNN(object):
     def train(self, session, train_sequences, train_labels, dev_sequences, dev_labels, epoches=10):
         batch_size = self._m_config["batch_size"]
         for epoch in range(epoches):
+            # 数据循环次数
             for i in range(0, train_sequences.shape[0], batch_size):
+                # 每次取一个batch
                 feed_dict = {
                     self._m_ph_sequences: train_sequences[i: i + batch_size],
                     self._m_ph_labels: train_labels[i: i + batch_size],
@@ -61,12 +65,17 @@ class TextCNN(object):
         return correct_samples / sequences.shape[0]
 
     def _build_graph(self):
+        self._learning_rate()
         self._build_placeholder()
         self._build_embedding_feature()
         self._build_cnn_layer()
         self._build_output()
         self._build_evaluation()
         self._build_optimizer()
+
+    def _learning_rate(self):
+        self._m_learning_decay_steps = 100
+        self._m_learning_decay_rate = 0.96
 
     def _build_placeholder(self):
         self._m_ph_sequences = tf.placeholder(
@@ -177,11 +186,15 @@ class TextCNN(object):
     def _build_optimizer(self):
         with tf.name_scope("optimizer"):
             self._m_global_step = tf.Variable(0, name="global_step", trainable=False)
-            optimizer = tf.train.AdamOptimizer(self._m_config["learning_rate"])
+            learning_rate = tf.train.exponential_decay(self._m_config["learning_rate"],
+                                                       self._m_global_step,
+                                                       self._m_learning_decay_steps,
+                                                       self._m_learning_decay_rate,
+                                                       staircase=True)
+            optimizer = tf.train.AdamOptimizer(learning_rate)
 
             grads_and_vars = optimizer.compute_gradients(self._m_loss)
             self._m_train_op = optimizer.apply_gradients(
                 grads_and_vars,
                 global_step=self._m_global_step,
             )
-
